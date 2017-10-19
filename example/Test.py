@@ -1,5 +1,12 @@
+import os
+import sys
+
 from docx import Document
 from docx.shared import Inches
+
+sys.path.append(os.path.join(os.path.split(os.path.realpath(__file__))[0], ".."))
+
+from DocProcessor import *
 
 docPath = "Test.docx"
 docModifyPath = "Test.md.docx"
@@ -51,4 +58,8 @@ def Test():
     if needSave:
         doc.save(docModifyPath)
 
-Test()
+#Test()
+
+processor = Processor(docPath)
+if processor.Open():
+    processor.FindString("ºã°²¹«Ë¾")

@@ -9,7 +9,7 @@ class Location:
         return self.__paragraphIndex
 
     @ParagraphIndex.setter
-    def ParagraphIndex(self. value):
+    def ParagraphIndex(self, value):
         self.__paragraphIndex = value
     
     @property
@@ -17,7 +17,7 @@ class Location:
         return len(self.__runsIndex)
 
     @RunsCount.setter
-    def RunsCount(self. value):
+    def RunsCount(self, value):
         if value <= 0:
             return
         self.__runsIndex = []
@@ -26,15 +26,15 @@ class Location:
             self.__runsIndex.append(-1)
 
     def GetRunIndex(self, index):
-        if index < 0 || index >= len(self.__runsIndex):
+        if index < 0 or index >= len(self.__runsIndex):
             return -1
         return self.__runsIndex[index]
 
     def SetRunIndex(self, index, value):
-        if index < 0 || index >= len(self.__runsIndex):
+        if index < 0 or index >= len(self.__runsIndex):
             return
         self.__stringMap[value] = [-1, -1, False, False]
-        return self.__runsIndex[index] = value
+        self.__runsIndex[index] = value
 
     def GetStringRange(self, runIndex):
         if runIndex in self.__stringMap:
