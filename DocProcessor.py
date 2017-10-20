@@ -12,72 +12,109 @@ class Processor:
     def __init__(self, path):
         self.__path = path
         self.__doc = None
+        self.__locations = None
 
     def Open(self):
         if not os.path.exists(self.__path):
-            print("Path does not exist: " + self.__path)
+            print("[[DOC]] Path does not exist: " + self.__path)
             return False
         self.__doc = Document(self.__path)
         return True
 
     def FindString(self, string):
-        isFount, locations = self.__locateString(string)
-        print(isFount)
-        print(locations)
+        if self.__doc is None:
+            print("[[DOC]] Not ready for find yet")
+            return False
+        if string is None or string == "":
+            print("[[DOC]] Invalid string for find")
+            return False
+        locateResult = self.__locateString(string)
+        self.__locations = locateResult[1]
+        return locateResult[0]
 
-    def __locateStringInRun(self, paragraph, paragraphIndex, beginIndex, endIndex):
+    def MarkString(self):
+        if self.__doc is None:
+            print("[[DOC]] Not ready for mark yet")
+            return False
+        if self.__locations is None:
+            print("[[DOC]] No location for mark")
+            return False
+        for location in self.__locations:
+            if not self.__applyMark(location):
+               return False
+        return True
+
+    def Save(self):
+        if self.__doc is None:
+            print("[[DOC]] Not ready for save yet")
+            return False
+        self.__doc.save(self.__path)
+        return True
+        
+    def __applyMark(self, location):
+        paragraph =  self.__doc.paragraphs[location.ParagraphIndex]
+        if not self.__adjustRuns(paragraph, location):
+            return False
+        return True
+
+    def __isStringStartInRun(self):
+        return False
+
+    def __locateStringInRun(self, paragraph, paragraphIndex, strBeginIndex, strEndIndex):
         runIndex = 0
-        runStartPos = 0
-        runEndPos = 0
+        runBeginIndex = 0
+        runEndIndex = 0
         runMapping = {}
+        def isStringNotMetYet():
+            return True if runEndIndex < strBeginIndex else False
         for run in paragraph.runs:
-            runEndPos = runStartPos + len(run.text) - 1
-            if runEndPos < beginIndex:
+            runEndIndex = runBeginIndex + len(run.text) - 1
+            if isStringNotMetYet():
                 # Not meet yet
-                pass
-            elif runStartPos > endIndex:
+                continue
+            elif runBeginIndex > strEndIndex:
                 # Over it already
                 break
-            elif runStartPos <= beginIndex and runEndPos >= beginIndex:
+            elif runBeginIndex <= strBeginIndex and runEndIndex >= strBeginIndex:
                 # Start in this run
-                if runEndPos >= endIndex:
+                if runEndIndex >= strEndIndex:
                     # All belongs to this run
                     runMapping[runIndex] = [
-                        beginIndex - runStartPos,
-                        runEndPos - runStartPos,
-                        True if beginIndex == runStartPos else False,
-                        True if endIndex == runEndPos else False
+                        strBeginIndex - runBeginIndex,
+                        runEndIndex - runBeginIndex,
+                        True if strBeginIndex == runBeginIndex else False,
+                        True if strEndIndex == runEndIndex else False
                     ]
                     break
                 else:
                     # Left part belongs to next run
                     runMapping[runIndex] = [
-                        beginIndex - runStartPos,
-                        runEndPos - runStartPos,
-                        True if beginIndex == runStartPos else False,
-                        False
+                        strBeginIndex - runBeginIndex,
+                        runEndIndex - runBeginIndex,
+                        True if strBeginIndex == runBeginIndex else False,
+                        True
                     ]
-            elif runStartPos > beginIndex and runEndPos < endIndex:
+            elif runBeginIndex > strBeginIndex and runEndIndex < strEndIndex:
                 # This run is only middle part
                 runMapping[runIndex] = [
                     0,
-                    runEndPos - runStartPos,
+                    runEndIndex - runBeginIndex,
                     True,
-                    False
+                    True
                 ]
-            elif runStartPos <= endIndex and runEndPos >= endIndex:
+            elif runBeginIndex <= strEndIndex and runEndIndex >= strEndIndex:
                 # This run is end part
                 runMapping[runIndex] = [
                     0,
-                    endIndex - runStartPos,
+                    strEndIndex - runBeginIndex,
                     True,
-                    True if endIndex == runEndPos else False
+                    True if strEndIndex == runEndIndex else False
                 ]
                 break
             else:
-                print("Should not be here")
+                print("[[DOC]] Should not be here")
                 return [False, None]
-            runStartPos = runEndPos + 1
+            runBeginIndex = runEndIndex + 1
             runIndex += 1
         if len(runMapping) <= 0:
             return [False, None]
@@ -95,7 +132,6 @@ class Processor:
         locations = []
         beginIndex = 0
         while True:
-            print(paragraph.text)
             resultIndex = paragraph.text.find(string, beginIndex)
             if resultIndex < 0:
                 break
@@ -109,8 +145,6 @@ class Processor:
         return [False, None]
 
     def __locateString(self, string):
-        if self.__doc is None or string is None or string == "":
-            return [False, None]
         locations = []
         paragraphIndex = 0
         for paragraph in self.__doc.paragraphs:

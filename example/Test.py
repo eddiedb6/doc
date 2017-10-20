@@ -1,3 +1,5 @@
+# -*- coding:UTF-8 -*-
+
 import os
 import sys
 
@@ -8,14 +10,21 @@ sys.path.append(os.path.join(os.path.split(os.path.realpath(__file__))[0], "..")
 
 from DocProcessor import *
 
-docPath = "Test.docx"
-docModifyPath = "Test.md.docx"
+docENPath = "Test.en.docx"
+docENModifyPath = "Test.en.md.docx"
+docCNPath = "Test.cn.docx"
+docCNModifyPath = "Test.cn.md.docx"
+
+stringToFind = "es"
 
 docDebug = 1
 parDebug = 1
-runDebug = 0
+runDebug = 1
 
 needSave = 0
+
+docPath = docENPath
+docModifyPath = docENModifyPath
 
 def Test():
     # Open doc
@@ -58,8 +67,22 @@ def Test():
     if needSave:
         doc.save(docModifyPath)
 
-#Test()
+Test()
 
 processor = Processor(docPath)
 if processor.Open():
-    processor.FindString("ºã°²¹«Ë¾")
+    print("Open")
+    if processor.FindString(stringToFind):
+        print("Find")
+        if processor.MarkString():
+            print("Mark")
+            if processor.Save():
+                print("Saved")
+            else:
+                print("Could not save")
+        else:
+            print("Could not mark")
+    else:
+        print("Could not find string: " + stringToFind)
+else:
+    print("Could not to open: " + docPath)
