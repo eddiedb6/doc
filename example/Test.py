@@ -15,7 +15,7 @@ docENModifyPath = "Test.en.md.docx"
 docCNPath = "Test.cn.docx"
 docCNModifyPath = "Test.cn.md.docx"
 
-stringToFind = "es"
+stringToFind = "test"
 
 docDebug = 1
 parDebug = 1

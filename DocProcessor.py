@@ -52,34 +52,80 @@ class Processor:
         return True
         
     def __applyMark(self, location):
-        paragraph =  self.__doc.paragraphs[location.ParagraphIndex]
+        paragraph = self.__doc.paragraphs[location.ParagraphIndex]
         if not self.__adjustRuns(paragraph, location):
             return False
+        # TODO
         return True
 
-    def __isStringStartInRun(self):
-        return False
+    def __adjustRuns(self, paragraph, location):
+        if len(paragraph.runs) != 4:
+            return True
+        print("--- Begin Test ---")
+        print("Bold:")
+        print(paragraph.runs[0].bold)
+        print(paragraph.runs[1].bold)
+        print(paragraph.runs[2].bold)
+        print("Italic:")
+        print(paragraph.runs[0].italic)
+        print(paragraph.runs[1].italic)
+        print(paragraph.runs[2].italic)
+        print("Style:")
+        print(paragraph.runs[0].style)
+        print(paragraph.runs[1].style)
+        print(paragraph.runs[2].style)
+        print("Underline:")
+        print(paragraph.runs[0].underline)
+        print(paragraph.runs[1].underline)
+        print(paragraph.runs[2].underline)
+        for i in range(0, 4):
+            print(">>>>" + str(i))
+            print("Font: all_caps, bold, complex_script, cs_bold, cs_italic")
+            font = paragraph.runs[i].font
+            print(font.all_caps)
+            print(font.bold)
+            print(font.complex_script)
+            print(font.cs_bold)
+            print(font.cs_italic)
+            print("Color: rgb, theme_color, type")
+            color = font.color
+            print(color.rgb)
+            print(color.theme_color)
+            print(color.type)
+        
+        print(paragraph.runs[0].underline)
+        print(paragraph.runs[1].underline)
+        print(paragraph.runs[2].underline)
+        print("--- End Test ---")
+        return True
 
     def __locateStringInRun(self, paragraph, paragraphIndex, strBeginIndex, strEndIndex):
         runIndex = 0
         runBeginIndex = 0
         runEndIndex = 0
-        runMapping = {}
+        strPosInRun = {}
         def isStringNotMetYet():
             return True if runEndIndex < strBeginIndex else False
+        def isStringMetAlready():
+            return True if runBeginIndex > strEndIndex else False
+        def isStringBeginHere():
+            return True if runBeginIndex <= strBeginIndex and runEndIndex >= strBeginIndex else False
+        def isStringEndHere():
+            return True if runBeginIndex <= strEndIndex and runEndIndex >= strEndIndex else False
+        def isRunInMiddleOfString():
+            return True if runBeginIndex > strBeginIndex and runEndIndex < strEndIndex else False
         for run in paragraph.runs:
             runEndIndex = runBeginIndex + len(run.text) - 1
             if isStringNotMetYet():
-                # Not meet yet
-                continue
-            elif runBeginIndex > strEndIndex:
-                # Over it already
+                pass
+            elif isStringMetAlready():
+                print("[[DOC]] Warning: should not come to here")
                 break
-            elif runBeginIndex <= strBeginIndex and runEndIndex >= strBeginIndex:
-                # Start in this run
-                if runEndIndex >= strEndIndex:
-                    # All belongs to this run
-                    runMapping[runIndex] = [
+            elif isStringBeginHere():
+                print("[[DOC]] Start in run: " + str(runIndex))
+                if isStringEndHere():
+                    print("[[DOC]] Also end in run: " + str(runIndex))
+                    strPosInRun[runIndex] = [
                         strBeginIndex - runBeginIndex,
                         runEndIndex - runBeginIndex,
                         True if strBeginIndex == runBeginIndex else False,
@@ -88,23 +134,23 @@ class Processor:
                     break
                 else:
                     # Left part belongs to next run
-                    runMapping[runIndex] = [
+                    strPosInRun[runIndex] = [
                         strBeginIndex - runBeginIndex,
                         runEndIndex - runBeginIndex,
                         True if strBeginIndex == runBeginIndex else False,
                         True
                     ]
-            elif runBeginIndex > strBeginIndex and runEndIndex < strEndIndex:
-                # This run is only middle part
-                runMapping[runIndex] = [
+            elif isRunInMiddleOfString():
+                print("[[DOC]] This run is in middle of string: " + str(runIndex))
+                strPosInRun[runIndex] = [
                     0,
                     runEndIndex - runBeginIndex,
                     True,
                     True
                 ]
-            elif runBeginIndex <= strEndIndex and runEndIndex >= strEndIndex:
-                # This run is end part
-                runMapping[runIndex] = [
+            elif isStringEndHere():
+                print("[[DOC]] End in run: " + str(runIndex))
+                strPosInRun[runIndex] = [
                     0,
                     strEndIndex - runBeginIndex,
                     True,
@@ -116,16 +162,16 @@ class Processor:
                 return [False, None]
             runBeginIndex = runEndIndex + 1
             runIndex += 1
-        if len(runMapping) <= 0:
+        if len(strPosInRun) <= 0:
             return [False, None]
         location = Location()
         location.ParagraphIndex = paragraphIndex
-        location.RunsCount = len(runMapping)
-        i = 0
-        for index in runMapping:
-            location.SetRunIndex(i, index)
-            location.SetStringRange(index, runMapping[index][0], runMapping[index][1], runMapping[index][2], runMapping[index][3])
-            i += 1
+        location.RunsCount = len(strPosInRun)
+        count = 0
+        for runIndex in strPosInRun:
+            location.SetRunIndex(count, runIndex)
+            location.SetStringRange(runIndex, strPosInRun[runIndex][0], strPosInRun[runIndex][1], strPosInRun[runIndex][2], strPosInRun[runIndex][3])
+            count += 1
         return [True, location]
         
     def __locateStringInParagraph(self, string, paragraph, paragraphIndex):
@@ -136,6 +182,7 @@ class Processor:
             if resultIndex < 0:
                 break
             # One found in paragraph
+            print("[[DOC]] Find string in paragraph: " + str(paragraphIndex))
             locatedResult = self.__locateStringInRun(paragraph, paragraphIndex, resultIndex, len(string) - 1 + resultIndex)
             if locatedResult[0]:
                 locations.append(locatedResult[1])
