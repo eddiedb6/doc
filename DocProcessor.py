@@ -39,9 +39,17 @@ class Processor:
         if self.__locations is None:
             print("[[DOC]] No location for mark")
             return False
+        locationsInParagraph = {}
+        # Sort locations by paragraph and order by des
         for location in self.__locations:
-            if not self.__applyMark(location):
-               return False
+            if location.ParagraphIndex in locationsInParagraph:
+                locationsInParagraph[location.ParagraphIndex].insert(0, location)
+            else:
+                locationsInParagraph[location.ParagraphIndex] = [location]
+        for paragraphIndex in locationsInParagraph:
+            for location in locationsInParagraph[paragraphIndex]:
+                if not self.__applyMark(location):
+                    return False
         return True
 
     def Save(self):
@@ -59,44 +67,22 @@ class Processor:
         return True
 
     def __adjustRuns(self, paragraph, location):
-        if len(paragraph.runs) != 4:
-            return True
-        print("--- Begin Test ---")
-        print("Bold:")
-        print(paragraph.runs[0].bold)
-        print(paragraph.runs[1].bold)
-        print(paragraph.runs[2].bold)
-        print("Italic:")
-        print(paragraph.runs[0].italic)
-        print(paragraph.runs[1].italic)
-        print(paragraph.runs[2].italic)
-        print("Style:")
-        print(paragraph.runs[0].style)
-        print(paragraph.runs[1].style)
-        print(paragraph.runs[2].style)
-        print("Underline:")
-        print(paragraph.runs[0].underline)
-        print(paragraph.runs[1].underline)
-        print(paragraph.runs[2].underline)
-        for i in range(0, 4):
-            print(">>>>" + str(i))
-            print("Font: all_caps, bold, complex_script, cs_bold, cs_italic")
-            font = paragraph.runs[i].font
-            print(font.all_caps)
-            print(font.bold)
-            print(font.complex_script)
-            print(font.cs_bold)
-            print(font.cs_italic)
-            print("Color: rgb, theme_color, type")
-            color = font.color
-            print(color.rgb)
-            print(color.theme_color)
-            print(color.type)
-        
-        print(paragraph.runs[0].underline)
-        print(paragraph.runs[1].underline)
-        print(paragraph.runs[2].underline)
-        print("--- End Test ---")
+        # Could only add but not 
+        runsCount = location.RunsCount;
+        runsToAdd = 0
+        for i in range(0, runsCount):
+            runIndex = location.GetRunIndex(i)
+            stringRange = location.GetStringRange(runIndex)
+            isFromBeginning = stringRange[2]
+            isToEnd = stringRange[3]
+            if not isFromBeginning:
+                runsToAdd += 1
+            if not isToEnd:
+                runsToAdd += 1
+        runsToAdd -= runsCount - 1
+        while runsToAdd > 0:
+            paragraph.add_run()
+            runsToAdd -= 1
         return True
 
     def __locateStringInRun(self, paragraph, paragraphIndex, strBeginIndex, strEndIndex):
