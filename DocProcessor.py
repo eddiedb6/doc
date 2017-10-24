@@ -13,6 +13,7 @@ class Processor:
         self.__path = path
         self.__doc = None
         self.__locations = None
+        self.__currentString = ""
 
     def Open(self):
         if not os.path.exists(self.__path):
@@ -30,6 +31,7 @@ class Processor:
             return False
         locateResult = self.__locateString(string)
         self.__locations = locateResult[1]
+        self.__currentString = string
         return locateResult[0]
 
     def MarkString(self):
@@ -61,28 +63,71 @@ class Processor:
         
     def __applyMark(self, location):
         paragraph = self.__doc.paragraphs[location.ParagraphIndex]
-        if not self.__adjustRuns(paragraph, location):
-            return False
-        # TODO
-        return True
+        runsCount = location.RunsCount
+        
+        markRunIndex = -1
+        preRunIndex = -1
+        postRunOriginIndex = -1
+        postRunMovedIndex = -1
+        moveOffset = 0
+        markText = ""        
 
-    def __adjustRuns(self, paragraph, location):
-        # Could only add but not 
-        runsCount = location.RunsCount;
-        runsToAdd = 0
-        for i in range(0, runsCount):
-            runIndex = location.GetRunIndex(i)
-            stringRange = location.GetStringRange(runIndex)
-            isFromBeginning = stringRange[2]
-            isToEnd = stringRange[3]
-            if not isFromBeginning:
-                runsToAdd += 1
-            if not isToEnd:
-                runsToAdd += 1
-        runsToAdd -= runsCount - 1
-        while runsToAdd > 0:
+        # Check head
+        firstRun = location.GetRunIndex(0)
+        firstStringRange = location.GetStringRange(firstRun)
+        isFirstRunFromBeginning = firstStringRange[2]
+        if isFirstRunFromBeginning:
+            markRunIndex = firstRun
+        else:
+            markRunIndex = firstRun + 1
+            # Split head
+            markText =
+        preRunIndex = markRunIndex - 1
+        postRunMovedIndex = markRunIndex + 1
+
+        # Check end
+        lastRun = location.GetRunIndex(runsCount -1)
+        lastStringRange = location.GetStringRange(lastRun)
+        isLastRunToEnd = lastStringRange[3]
+        if isLastRunToEnd:
+            postRunOriginIndex = lastRun + 1
+        else:
+            postRunOriginIndex = lastRun
+        moveOffset = postRunMovedIndex - postRunOriginIndex
+
+        # Move
+        if moveOffset == 1:
+            # Add a run and move backward one position
             paragraph.add_run()
-            runsToAdd -= 1
+            index = len(paragraph.runs) - 2
+            while index >= postRunOriginIndex:
+                self.__copyRun(paragraph.runs[index], paragraph.runs[index + 1])
+                index -= 1
+        elif moveOffset > 1:
+            print("[[Doc]] Should not move backward more than one")
+            return False
+        else:
+            # Move forward
+            offset = 0
+            endIndex = len(paragraph.runs) - 1
+            while postRunOriginIndex + offset <= endIndex:
+                self.__copyRun(paragraph.runs[postRunOriginIndex + offset], paragraph.runs[postRunMovedIndex + offset])
+                offset += 1
+            # Reset useless run text in end
+            while postRunMovedIndex + offset <= endIndex:
+                paragraph.runs[postRunMovedIndex + offset].text = ""
+                offset += 1
+
+        # Handle head and end
+        if not isFirstRunFromBeginning:
+            paragraph.runs[preRunIndex].text = paragraph.runs[preRunIndex].text[:firstStringRange[0]]
+        if not isLastRunToEnd:
+            # Need to cut mark string in last run
+            paragraph.runs[postRunMovedIndex].text = paragraph.runs[postRunMovedIndex].text[lastStringRange[1] + 1:]
+
+        # Mark run
+        paragraph.runs[markRunIndex].text = self.__currentString
+            
         return True
 
     def __locateStringInRun(self, paragraph, paragraphIndex, strBeginIndex, strEndIndex):
