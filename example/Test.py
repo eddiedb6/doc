@@ -20,6 +20,7 @@ stringToFind = "test"
 docDebug = 1
 parDebug = 1
 runDebug = 1
+apiDebug = 0
 
 needSave = 0
 
@@ -31,9 +32,10 @@ def Test():
     doc = Document(docPath)
     if docDebug:
         print("[[Path]] " + docPath)
-        print("[[Doc Objs]]")
-        for obj in dir(doc):
-            print("    " + obj)
+        if apiDebug:
+            print("[[Doc Objs]]")
+            for obj in dir(doc):
+                print("    " + obj)
             
     # Check each paragraph    
     lenParagraphs = len(doc.paragraphs)
@@ -42,7 +44,7 @@ def Test():
     indexParagraph = 0
     for paragraph in doc.paragraphs:
         if parDebug:
-            if indexParagraph == 0:
+            if indexParagraph == 0 and apiDebug:
                 print("[[Paragraph Objs]]")
                 for obj in dir(paragraph):
                     print("    " + obj)
@@ -55,7 +57,7 @@ def Test():
         indexRun = 0
         for run in paragraph.runs:
             if runDebug:
-                if indexParagraph == 0 and indexRun == 0:
+                if indexParagraph == 0 and indexRun == 0 and apiDebug:
                     print("    [[Run Objs]]")
                     for obj in dir(run):
                         print("        " + obj)

@@ -3,6 +3,7 @@ import sys
 
 from docx import Document
 from docx.shared import Inches
+from docx.shared import Pt
 
 sys.path.append(os.path.join(os.path.split(os.path.realpath(__file__))[0], "."))
 
@@ -70,7 +71,6 @@ class Processor:
         postRunOriginIndex = -1
         postRunMovedIndex = -1
         moveOffset = 0
-        markText = ""        
 
         # Check head
         firstRun = location.GetRunIndex(0)
@@ -80,8 +80,6 @@ class Processor:
             markRunIndex = firstRun
         else:
             markRunIndex = firstRun + 1
-            # Split head
-            markText =
         preRunIndex = markRunIndex - 1
         postRunMovedIndex = markRunIndex + 1
 
@@ -122,14 +120,64 @@ class Processor:
         if not isFirstRunFromBeginning:
             paragraph.runs[preRunIndex].text = paragraph.runs[preRunIndex].text[:firstStringRange[0]]
         if not isLastRunToEnd:
-            # Need to cut mark string in last run
             paragraph.runs[postRunMovedIndex].text = paragraph.runs[postRunMovedIndex].text[lastStringRange[1] + 1:]
 
         # Mark run
-        paragraph.runs[markRunIndex].text = self.__currentString
+        markRun = paragraph.runs[markRunIndex]
+        markRun.text = self.__currentString
+        markRun.bold = True
+        markRun.italic = False
+        markRun.underline = True
+        markRunFont = markRun.font
+        markRunFont.bold = True
+        markRunFont.italic = False
+        markRunFont.underline = True
+        markRunFont.size = Pt(20)
+        markRunFont.name = "Arial"
             
         return True
 
+    def __copyRun(self, runSrc, runDes):
+        self.__copyFont(runSrc.font, runDes.font)
+        runDes.bold =      runSrc.bold
+        runDes.italic =    runSrc.italic
+        runDes.style =     runSrc.style
+        runDes.text =      runSrc.text
+        runDes.underline = runSrc.underline
+
+    def __copyFont(self, fontSrc, fontDes):
+        self.__copyColor(fontSrc.color, fontDes.color)
+        fontDes.all_caps =        fontSrc.all_caps
+        fontDes.bold =            fontSrc.bold
+        fontDes.complex_script =  fontSrc.complex_script
+        fontDes.cs_bold =         fontSrc.cs_bold
+        fontDes.cs_italic =       fontSrc.cs_italic
+        fontDes.double_strike =   fontSrc.double_strike
+        fontDes.emboss =          fontSrc.emboss
+        fontDes.hidden =          fontSrc.hidden
+        fontDes.highlight_color = fontSrc.highlight_color
+        fontDes.imprint =         fontSrc.imprint
+        fontDes.italic =          fontSrc.italic
+        fontDes.math =            fontSrc.math
+        fontDes.name =            fontSrc.name
+        fontDes.no_proof =        fontSrc.no_proof
+        fontDes.outline =         fontSrc.outline
+        fontDes.rtl =             fontSrc.rtl
+        fontDes.shadow =          fontSrc.shadow
+        fontDes.size =            fontSrc.size
+        fontDes.small_caps =      fontSrc.small_caps
+        fontDes.snap_to_grid =    fontSrc.snap_to_grid
+        fontDes.spec_vanish =     fontSrc.spec_vanish
+        fontDes.strike =          fontSrc.strike
+        fontDes.subscript =       fontSrc.subscript
+        fontDes.superscript =     fontSrc.superscript
+        fontDes.underline =       fontSrc.underline
+        fontDes.web_hidden =      fontSrc.web_hidden
+
+    def __copyColor(self, colorSrc, colorDes):
+        colorDes.rgb =         colorSrc.rgb
+        colorDes.theme_color = colorSrc.theme_color
+        
     def __locateStringInRun(self, paragraph, paragraphIndex, strBeginIndex, strEndIndex):
         runIndex = 0
         runBeginIndex = 0
