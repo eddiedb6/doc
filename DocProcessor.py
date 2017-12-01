@@ -23,12 +23,20 @@ class Processor:
         self.__doc = Document(self.__path)
         return True
 
-    def FindString(self, string):
+    def FindString(self, regex):
         if self.__doc is None:
             print("[[DOC]] Not ready for find yet")
+            return []
+        if regex is None or regex == "":
+            print("[[DOC]] Invalid regex for find")
+            return []        
+    
+    def LocateString(self, string):
+        if self.__doc is None:
+            print("[[DOC]] Not ready for locate yet")
             return False
         if string is None or string == "":
-            print("[[DOC]] Invalid string for find")
+            print("[[DOC]] Invalid string for locate")
             return False
         locateResult = self.__locateString(string)
         self.__locations = locateResult[1]

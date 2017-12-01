@@ -74,7 +74,7 @@ Test()
 processor = Processor(docPath)
 if processor.Open():
     print("Open")
-    if processor.FindString(stringToFind):
+    if processor.LocateString(stringToFind):
         print("Find")
         if processor.MarkString():
             print("Mark")
