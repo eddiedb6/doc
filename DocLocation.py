@@ -1,9 +1,18 @@
 class Location:
     def __init__(self):
+        self.__string = None
         self.__paragraphIndex = -1
         self.__runsIndex = []
         self.__stringMap = {}
 
+    @property
+    def String(self):
+        return self.__string
+
+    @String.setter
+    def String(self, value):
+        self.__string = value
+        
     @property
     def ParagraphIndex(self):
         return self.__paragraphIndex

@@ -15,7 +15,8 @@ docENModifyPath = "Test.en.md.docx"
 docCNPath = "Test.cn.docx"
 docCNModifyPath = "Test.cn.md.docx"
 
-stringToFind = "test"
+stringToFind = "3a"
+stringRegex = "3a([\d\w]+)te"
 
 docDebug = 1
 parDebug = 1
@@ -23,6 +24,8 @@ runDebug = 1
 apiDebug = 0
 
 needSave = 0
+
+isRegexTest = 0
 
 docPath = docENPath
 docModifyPath = docENModifyPath
@@ -74,7 +77,12 @@ Test()
 processor = Processor(docPath)
 if processor.Open():
     print("Open")
-    if processor.LocateString(stringToFind):
+    isFound = False
+    if isRegexTest:
+        isFound = processor.LocateRegexString(stringRegex)
+    else:
+        isFound = processor.LocateString(stringToFind)
+    if isFound:
         print("Find")
         if processor.MarkString():
             print("Mark")

@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 
 from docx import Document
 from docx.shared import Inches
@@ -14,7 +15,7 @@ class Processor:
         self.__path = path
         self.__doc = None
         self.__locations = None
-        self.__currentString = ""
+        self.__isRegex = False
 
     def Open(self):
         if not os.path.exists(self.__path):
@@ -23,13 +24,17 @@ class Processor:
         self.__doc = Document(self.__path)
         return True
 
-    def FindString(self, regex):
+    def LocateRegexString(self, regex):
         if self.__doc is None:
             print("[[DOC]] Not ready for find yet")
-            return []
+            return False
         if regex is None or regex == "":
             print("[[DOC]] Invalid regex for find")
-            return []        
+            return False
+        self.__isRegex = True
+        locateResult = self.__locateString(regex)
+        self.__locations = locateResult[1]
+        return locateResult[0]
     
     def LocateString(self, string):
         if self.__doc is None:
@@ -38,9 +43,9 @@ class Processor:
         if string is None or string == "":
             print("[[DOC]] Invalid string for locate")
             return False
+        self.__isRegex = False
         locateResult = self.__locateString(string)
         self.__locations = locateResult[1]
-        self.__currentString = string
         return locateResult[0]
 
     def MarkString(self):
@@ -132,7 +137,7 @@ class Processor:
 
         # Mark run
         markRun = paragraph.runs[markRunIndex]
-        markRun.text = self.__currentString
+        markRun.text = location.String
         markRun.bold = True
         markRun.italic = False
         markRun.underline = True
@@ -186,7 +191,8 @@ class Processor:
         colorDes.rgb =         colorSrc.rgb
         colorDes.theme_color = colorSrc.theme_color
         
-    def __locateStringInRun(self, paragraph, paragraphIndex, strBeginIndex, strEndIndex):
+    def __locateStringInRun(self, paragraph, paragraphIndex, string, strBeginIndex):
+        strEndIndex = len(string) - 1 + strBeginIndex
         runIndex = 0
         runBeginIndex = 0
         runEndIndex = 0
@@ -252,6 +258,7 @@ class Processor:
         if len(strPosInRun) <= 0:
             return [False, None]
         location = Location()
+        location.String = string
         location.ParagraphIndex = paragraphIndex
         location.RunsCount = len(strPosInRun)
         count = 0
@@ -264,16 +271,32 @@ class Processor:
     def __locateStringInParagraph(self, string, paragraph, paragraphIndex):
         locations = []
         beginIndex = 0
+        strToLocate = None
+        
         while True:
-            resultIndex = paragraph.text.find(string, beginIndex)
-            if resultIndex < 0:
-                break
+            resultStartIndex = -1
+
+            if self.__isRegex:
+                prog = re.compile(string)
+                result = prog.search(paragraph.text, beginIndex)
+                if not result:
+                    break
+                resultStartIndex = result.start(1)
+                strToLocate = result.group(1)
+            else:
+                result = paragraph.text.find(string, beginIndex)
+                if result < 0:
+                    break
+                resultStartIndex = result
+                strToLocate = string
+                
             # One found in paragraph
             print("[[DOC]] Find string in paragraph: " + str(paragraphIndex))
-            locatedResult = self.__locateStringInRun(paragraph, paragraphIndex, resultIndex, len(string) - 1 + resultIndex)
+            locatedResult = self.__locateStringInRun(paragraph, paragraphIndex, strToLocate, resultStartIndex)
             if locatedResult[0]:
                 locations.append(locatedResult[1])
-            beginIndex = resultIndex + 1
+            beginIndex = resultStartIndex + len(strToLocate)
+            
         if len(locations) > 0:
             return [True, locations]
         return [False, None]
