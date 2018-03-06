@@ -5,6 +5,8 @@ import re
 from docx import Document
 from docx.shared import Inches
 from docx.shared import Pt
+from docx.shared import RGBColor
+from docx.enum.dml import MSO_COLOR_TYPE
 
 sys.path.append(os.path.join(os.path.split(os.path.realpath(__file__))[0], "."))
 
@@ -19,17 +21,17 @@ class Processor:
 
     def Open(self):
         if not os.path.exists(self.__path):
-            print("[[DOC]] Path does not exist: " + self.__path)
+            print("[[Doc]] Path does not exist: " + self.__path)
             return False
         self.__doc = Document(self.__path)
         return True
 
     def LocateRegexString(self, regex):
         if self.__doc is None:
-            print("[[DOC]] Not ready for find yet")
+            print("[[Doc]] Not ready for find yet")
             return False
         if regex is None or regex == "":
-            print("[[DOC]] Invalid regex for find")
+            print("[[Doc]] Invalid regex for find")
             return False
         self.__isRegex = True
         locateResult = self.__locateString(regex)
@@ -38,10 +40,10 @@ class Processor:
     
     def LocateString(self, string):
         if self.__doc is None:
-            print("[[DOC]] Not ready for locate yet")
+            print("[[Doc]] Not ready for locate yet")
             return False
         if string is None or string == "":
-            print("[[DOC]] Invalid string for locate")
+            print("[[Doc]] Invalid string for locate")
             return False
         self.__isRegex = False
         locateResult = self.__locateString(string)
@@ -50,10 +52,10 @@ class Processor:
 
     def MarkString(self):
         if self.__doc is None:
-            print("[[DOC]] Not ready for mark yet")
+            print("[[Doc]] Not ready for mark yet")
             return False
         if self.__locations is None:
-            print("[[DOC]] No location for mark")
+            print("[[Doc]] No location for mark")
             return False
         locationsInParagraph = {}
         # Sort locations by paragraph and order by des
@@ -70,7 +72,7 @@ class Processor:
 
     def Save(self):
         if self.__doc is None:
-            print("[[DOC]] Not ready for save yet")
+            print("[[Doc]] Not ready for save yet")
             return False
         self.__doc.save(self.__path)
         return True
@@ -78,6 +80,8 @@ class Processor:
     def __applyMark(self, location):
         paragraph = self.__doc.paragraphs[location.ParagraphIndex]
         runsCount = location.RunsCount
+
+        print("[[Doc]] Apply Mark: " + str(location.ParagraphIndex))
         
         markRunIndex = -1
         preRunIndex = -1
@@ -96,6 +100,10 @@ class Processor:
         preRunIndex = markRunIndex - 1
         postRunMovedIndex = markRunIndex + 1
 
+        print("    markRunIndex:       " + str(markRunIndex))
+        print("    preRunIndex:        " + str(preRunIndex))
+        print("    postRunMovedIndex:  " + str(postRunMovedIndex))
+                
         # Check end
         lastRun = location.GetRunIndex(runsCount -1)
         lastStringRange = location.GetStringRange(lastRun)
@@ -106,16 +114,22 @@ class Processor:
             postRunOriginIndex = lastRun
         moveOffset = postRunMovedIndex - postRunOriginIndex
 
+        print("    postRunOriginIndex: " + str(postRunOriginIndex))
+        print("    moveOffset:         " + str(moveOffset))
+        
         # Move
-        if moveOffset == 1:
-            # Add a run and move backward one position
-            paragraph.add_run()
-            index = len(paragraph.runs) - 2
+        if moveOffset == 1 or moveOffset == 2:
+            # Add runs and move backward
+            runAddCount = moveOffset
+            while runAddCount > 0:
+                paragraph.add_run()
+                runAddCount -= 1
+            index = len(paragraph.runs) - 1 - moveOffset
             while index >= postRunOriginIndex:
-                self.__copyRun(paragraph.runs[index], paragraph.runs[index + 1])
+                self.__copyRun(paragraph.runs[index], paragraph.runs[index + moveOffset])
                 index -= 1
-        elif moveOffset > 1:
-            print("[[Doc]] Should not move backward more than one")
+        elif moveOffset > 2:
+            print("[[Doc]] Should not move backward more than two")
             return False
         else:
             # Move forward
@@ -147,7 +161,10 @@ class Processor:
         markRunFont.underline = True
         markRunFont.size = Pt(20)
         markRunFont.name = "Arial"
-            
+        markRunFontColor = markRunFont.color
+        markRunFontColor.rgb = RGBColor(0xff, 0x00, 0x00)
+        print(markRunFontColor.type)
+
         return True
 
     def __copyRun(self, runSrc, runDes):
@@ -159,7 +176,6 @@ class Processor:
         runDes.underline = runSrc.underline
 
     def __copyFont(self, fontSrc, fontDes):
-        self.__copyColor(fontSrc.color, fontDes.color)
         fontDes.all_caps =        fontSrc.all_caps
         fontDes.bold =            fontSrc.bold
         fontDes.complex_script =  fontSrc.complex_script
@@ -186,12 +202,11 @@ class Processor:
         fontDes.superscript =     fontSrc.superscript
         fontDes.underline =       fontSrc.underline
         fontDes.web_hidden =      fontSrc.web_hidden
+        fontDes.color.theme_color = fontSrc.color.theme_color
+        fontDes.color.rgb =       fontSrc.color.rgb
 
-    def __copyColor(self, colorSrc, colorDes):
-        colorDes.rgb =         colorSrc.rgb
-        colorDes.theme_color = colorSrc.theme_color
-        
     def __locateStringInRun(self, paragraph, paragraphIndex, string, strBeginIndex):
+        print("[[Doc]] String: " + string)
         strEndIndex = len(string) - 1 + strBeginIndex
         runIndex = 0
         runBeginIndex = 0
@@ -212,15 +227,15 @@ class Processor:
             if isStringNotMetYet():
                 pass
             elif isStringMetAlready():
-                print("[[DOC]] Warning: should not come to here")
+                print("[[Doc]] Warning: should not come to here")
                 break
             elif isStringBeginHere():
-                print("[[DOC]] Start in run: " + str(runIndex))
+                print("[[Doc]] Start in run: " + str(runIndex))
                 if isStringEndHere():
-                    print("[[DOC]] Also end in run: " + str(runIndex))
+                    print("[[Doc]] Also end in run: " + str(runIndex))
                     strPosInRun[runIndex] = [
                         strBeginIndex - runBeginIndex,
-                        runEndIndex - runBeginIndex,
+                        strEndIndex - runBeginIndex,
                         True if strBeginIndex == runBeginIndex else False,
                         True if strEndIndex == runEndIndex else False
                     ]
@@ -234,7 +249,7 @@ class Processor:
                         True
                     ]
             elif isRunInMiddleOfString():
-                print("[[DOC]] This run is in middle of string: " + str(runIndex))
+                print("[[Doc]] This run is in middle of string: " + str(runIndex))
                 strPosInRun[runIndex] = [
                     0,
                     runEndIndex - runBeginIndex,
@@ -242,7 +257,7 @@ class Processor:
                     True
                 ]
             elif isStringEndHere():
-                print("[[DOC]] End in run: " + str(runIndex))
+                print("[[Doc]] End in run: " + str(runIndex))
                 strPosInRun[runIndex] = [
                     0,
                     strEndIndex - runBeginIndex,
@@ -251,7 +266,7 @@ class Processor:
                 ]
                 break
             else:
-                print("[[DOC]] Should not be here")
+                print("[[Doc]] Should not be here")
                 return [False, None]
             runBeginIndex = runEndIndex + 1
             runIndex += 1
@@ -262,9 +277,15 @@ class Processor:
         location.ParagraphIndex = paragraphIndex
         location.RunsCount = len(strPosInRun)
         count = 0
+        print("[[Doc]] Location:")
         for runIndex in strPosInRun:
             location.SetRunIndex(count, runIndex)
             location.SetStringRange(runIndex, strPosInRun[runIndex][0], strPosInRun[runIndex][1], strPosInRun[runIndex][2], strPosInRun[runIndex][3])
+            print("    run: " + str(runIndex))
+            print("        start: " + str(strPosInRun[runIndex][0]))
+            print("        end:   " + str(strPosInRun[runIndex][1]))
+            print("        head:  " + str(strPosInRun[runIndex][2]))
+            print("        tail:  " + str(strPosInRun[runIndex][3]))
             count += 1
         return [True, location]
         
@@ -291,7 +312,7 @@ class Processor:
                 strToLocate = string
                 
             # One found in paragraph
-            print("[[DOC]] Find string in paragraph: " + str(paragraphIndex))
+            print("[[Doc]] Find string in paragraph: " + str(paragraphIndex))
             locatedResult = self.__locateStringInRun(paragraph, paragraphIndex, strToLocate, resultStartIndex)
             if locatedResult[0]:
                 locations.append(locatedResult[1])

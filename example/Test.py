@@ -1,4 +1,4 @@
-# -*- coding:UTF-8 -*-
+# -*- coding:utf-8 -*-
 
 import os
 import sys
@@ -15,8 +15,10 @@ docENModifyPath = "Test.en.md.docx"
 docCNPath = "Test.cn.docx"
 docCNModifyPath = "Test.cn.md.docx"
 
-stringToFind = "3a"
-stringRegex = "3a([\d\w]+)te"
+stringToFind = "China"
+#stringToFind = "中国"
+stringRegex = "China(.*?)d"
+#stringRegex = "中(.*?)工"
 
 docDebug = 1
 parDebug = 1
@@ -28,8 +30,9 @@ needSave = 0
 isRegexTest = 0
 
 docPath = docENPath
+#docPath = docCNPath
 docModifyPath = docENModifyPath
-
+#docModifyPath = docCNModifyPath
 def Test():
     # Open doc
     doc = Document(docPath)
