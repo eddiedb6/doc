@@ -33,6 +33,7 @@ docPath = docENPath
 #docPath = docCNPath
 docModifyPath = docENModifyPath
 #docModifyPath = docCNModifyPath
+
 def Test():
     # Open doc
     doc = Document(docPath)
@@ -81,10 +82,13 @@ processor = Processor(docPath)
 if processor.Open():
     print("Open")
     isFound = False
+    str = ""
     if isRegexTest:
-        isFound = processor.LocateRegexString(stringRegex)
+        str = stringRegex
+        isFound = processor.LocateRegexString(str)
     else:
-        isFound = processor.LocateString(stringToFind)
+        str = stringToFind
+        isFound = processor.LocateString(str)
     if isFound:
         print("Find")
         if processor.MarkString():
@@ -96,6 +100,6 @@ if processor.Open():
         else:
             print("Could not mark")
     else:
-        print("Could not find string: " + stringToFind)
+        print("Could not find string: " + str)
 else:
     print("Could not to open: " + docPath)

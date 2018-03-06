@@ -92,6 +92,12 @@ class Processor:
         # Check head
         firstRun = location.GetRunIndex(0)
         firstStringRange = location.GetStringRange(firstRun)
+        ## DEBUG
+        print("Range")
+        print(firstStringRange[0])
+        print(firstStringRange[1])
+        print(firstStringRange[2])
+        print(firstStringRange[3])
         isFirstRunFromBeginning = firstStringRange[2]
         if isFirstRunFromBeginning:
             markRunIndex = firstRun
@@ -207,6 +213,7 @@ class Processor:
 
     def __locateStringInRun(self, paragraph, paragraphIndex, string, strBeginIndex):
         print("[[Doc]] String: " + string)
+
         strEndIndex = len(string) - 1 + strBeginIndex
         runIndex = 0
         runBeginIndex = 0
@@ -224,6 +231,7 @@ class Processor:
             return True if runBeginIndex > strBeginIndex and runEndIndex < strEndIndex else False
         for run in paragraph.runs:
             runEndIndex = runBeginIndex + len(run.text) - 1
+            print(runEndIndex)
             if isStringNotMetYet():
                 pass
             elif isStringMetAlready():
@@ -304,12 +312,16 @@ class Processor:
                     break
                 resultStartIndex = result.start(1)
                 strToLocate = result.group(1)
+                #print("DEBUG")
+                print(strToLocate)
             else:
                 result = paragraph.text.find(string, beginIndex)
                 if result < 0:
                     break
                 resultStartIndex = result
                 strToLocate = string
+                #print("DEBUG")
+                print(strToLocate)
                 
             # One found in paragraph
             print("[[Doc]] Find string in paragraph: " + str(paragraphIndex))
