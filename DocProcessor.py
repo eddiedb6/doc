@@ -92,12 +92,6 @@ class Processor:
         # Check head
         firstRun = location.GetRunIndex(0)
         firstStringRange = location.GetStringRange(firstRun)
-        ## DEBUG
-        print("Range")
-        print(firstStringRange[0])
-        print(firstStringRange[1])
-        print(firstStringRange[2])
-        print(firstStringRange[3])
         isFirstRunFromBeginning = firstStringRange[2]
         if isFirstRunFromBeginning:
             markRunIndex = firstRun
@@ -105,10 +99,6 @@ class Processor:
             markRunIndex = firstRun + 1
         preRunIndex = markRunIndex - 1
         postRunMovedIndex = markRunIndex + 1
-
-        print("    markRunIndex:       " + str(markRunIndex))
-        print("    preRunIndex:        " + str(preRunIndex))
-        print("    postRunMovedIndex:  " + str(postRunMovedIndex))
                 
         # Check end
         lastRun = location.GetRunIndex(runsCount -1)
@@ -120,9 +110,6 @@ class Processor:
             postRunOriginIndex = lastRun
         moveOffset = postRunMovedIndex - postRunOriginIndex
 
-        print("    postRunOriginIndex: " + str(postRunOriginIndex))
-        print("    moveOffset:         " + str(moveOffset))
-        
         # Move
         if moveOffset == 1 or moveOffset == 2:
             # Add runs and move backward
@@ -169,7 +156,6 @@ class Processor:
         markRunFont.name = "Arial"
         markRunFontColor = markRunFont.color
         markRunFontColor.rgb = RGBColor(0xff, 0x00, 0x00)
-        print(markRunFontColor.type)
 
         return True
 
@@ -231,7 +217,6 @@ class Processor:
             return True if runBeginIndex > strBeginIndex and runEndIndex < strEndIndex else False
         for run in paragraph.runs:
             runEndIndex = runBeginIndex + len(run.text) - 1
-            print(runEndIndex)
             if isStringNotMetYet():
                 pass
             elif isStringMetAlready():
@@ -289,11 +274,6 @@ class Processor:
         for runIndex in strPosInRun:
             location.SetRunIndex(count, runIndex)
             location.SetStringRange(runIndex, strPosInRun[runIndex][0], strPosInRun[runIndex][1], strPosInRun[runIndex][2], strPosInRun[runIndex][3])
-            print("    run: " + str(runIndex))
-            print("        start: " + str(strPosInRun[runIndex][0]))
-            print("        end:   " + str(strPosInRun[runIndex][1]))
-            print("        head:  " + str(strPosInRun[runIndex][2]))
-            print("        tail:  " + str(strPosInRun[runIndex][3]))
             count += 1
         return [True, location]
         
@@ -312,16 +292,12 @@ class Processor:
                     break
                 resultStartIndex = result.start(1)
                 strToLocate = result.group(1)
-                #print("DEBUG")
-                print(strToLocate)
             else:
                 result = paragraph.text.find(string, beginIndex)
                 if result < 0:
                     break
                 resultStartIndex = result
                 strToLocate = string
-                #print("DEBUG")
-                print(strToLocate)
                 
             # One found in paragraph
             print("[[Doc]] Find string in paragraph: " + str(paragraphIndex))
